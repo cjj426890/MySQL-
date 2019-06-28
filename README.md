@@ -1,5 +1,3 @@
-# MySQL-
-关于MySQL学习的一点点笔记
 三大数据库（MySql、Redis、MongoDB）  
 
 | 序号 |               软件程序               |
@@ -175,7 +173,7 @@
   ```mysql
   CREATE TABLE t_teacher(
   	id INT PRIMARY KEY AUTO_INCREMENT,
-  	......
+  ......
   );
   ```
 
@@ -279,7 +277,7 @@ DROP INDEX 索引名称 ON 表名;
 
 
 
-## 数据库的基本查询
+## 数据库的基本查询(使用demo.sql)
 
 ### 数据的简单查询
 
@@ -297,6 +295,301 @@ DROP INDEX 索引名称 ON 表名;
 
 - 条件表达式：数学运算符，比较运算符，逻辑运算符，按位运算符
 
-### 
 
-### 
+
+#### 记录查询
+
+- 最基本的查询语句是有SELECT和FROM关键字组成的
+
+```mysql
+SELECT * FROOM t_emp;
+
+SELECT empno,ename,sal FROM t_emp;
+```
+
+- SELECT语句屏蔽了物理层的操作，用户不必关心数据的真实存储，交由数据库高效的查找数据
+- 通常情况下，SELECT子句中使用了表达式，那么这列的 别名就默认为表达式，因此需要一种对列名重命名的机制
+
+```mysql
+SELECT
+	empno,
+	sal*12 AS "income"
+FROM t_emp;
+```
+
+- 查询语句的子句执行顺序
+
+```mysql
+# 1.词法分析与优化 读取SQL语句
+# 2.FROM 选择数据来源
+# 3.SELECT 选择输出内容
+SELECT
+	empno,
+	sal*12 AS "income"
+FROM t_emp;
+```
+
+#### 数据操作语言：数据分页
+
+- 比如我们查看朋友圈，只会加载少量部分信息，不用一次性加载全部朋友圈，那样只会浪费CPU时间、内存和网络带宽
+- 如果结果集的记录很多，则可以使用LIMIT关键字限定结果集数量
+
+```mysql
+SELECT ...... FROM...... LIMIT 起始位置，偏移量;
+# 举例
+SELECT empno,ename FROM t_emp LIMIT 0,20;
+```
+
+- 数据分页的简写用法
+
+  - 如果LIMIT子句只有一个参数，它表示的是偏移量，起始值默认为0
+
+  ```mysql
+  SELECT empno,ename FROM t_tmp LIMIT 10;
+  SELECT empno,ename FROM t-tmp LIMIT 0,10;
+  
+  # 执行顺序
+  FROM 》》 SELECT 》》 LIMIT
+  
+  ```
+
+#### 数据操作语言：结果集排序
+
+- 如果没有设置，查询语句不会对结果集进行排序。也就是说，如果想让结果集按照某种顺序排列，就必须使用ORDER BY子句
+
+```mysql
+# 语句格式
+SELECT ...... FROM ...... ORDER BY 列名 [ASC|DESC];
+# 举例(默认为[ASC]升序,降序[DESC])
+SELECT ename,sal FROM t_tmp ORDER BY sal;
+```
+
+- ASC代表升序（默认），DESC代表降序
+- 如果排序列是数字类型，数据库就按照数字大小排序，如果是日期类型就按照日期大小排序，如果是字符串就按照字符集序号排序
+
+#### 多个排序字段
+
+- 默认情况下，如果两条数据排序字段内容相同，那么排序会是什么样子
+
+- 我们可以使用ORDER BY 规定首要排序条件和子要排序条件，数据库会按照首要排序条件排序，如果遇到首要排序内容相同的记录，那么就会启用次要排序条件接着排序
+
+```
+# 语句格式
+SELECT ...... FROM ...... ORDER BY 列名 [ASC|DESC],列名 [ASC|DESC];
+# 举例(默认为[ASC]升序,降序[DESC])
+SELECT ename,sal FROM t_tmp ORDER BY sal DESC,hiredate ASC;
+```
+
+- ORDER BY 与LIMIT联合
+
+```mysql
+# 查询出empno,ename,sal并按照sal排列出前5
+SELECT
+	empno,ename,asl
+FROM t_emp ORDER BY sal DESC LIMIT 0,5;
+```
+
+#### 排序+分页
+
+- ORDER BY子句书写的时候放在LIMIT子句的前面
+
+```mysql
+# 执行顺序
+FROM >> SELECT >> ORDER BY >> LIMIT
+```
+
+#### 数据操作语言：去除重复记录
+
+##### 结果集中的重复记录
+
+- 假如我们要查询员工表有多少种职业，写出来的SQL语句如下：`SELECT job FROM t_tmp;`
+
+- 如果我们需要去除冲覅的数据，可以使用DISTINCT关键字实现（只去除结果集的，不会该表数据库）：`SELECT DISTINCT 字段 FROM .....;`
+- 去掉job字段集中的重复记录：`SELECT DISTINCT job FROM t_tmp；`
+
+##### 注意事项
+
+- 使用DISTINCT的SELECT子句中只能查询一列数据，如果查询多列，去除重复记录就会失效
+- DISTINCT关键字只能在SELECT子句中使用一次
+
+#### 数据操作语言：条件查询（一）
+
+- 很多时候，用户感兴趣的并不是逻辑表里的全部记录，而只是它们当中能够满足某一种或几种条件的记录。这类条件要用WHERE子句来实现数据的筛选`SELECT ... FROM ... WHERE 条件 [AND|OR] 条件 ...;` 
+
+- 四类运算符
+
+| 序号 |   运算符   |
+| :--: | :--------: |
+|  1   | 数学运算符 |
+|  2   | 比较运算符 |
+|  3   | 逻辑运算符 |
+|  4   | 换位运算符 |
+
+- 算数运算符
+
+| 序号 | 表达式 | 意义 | 例子 |
+| :--: | :----: | :--: | :--: |
+|  1   |   +    | 加法 |      |
+|  2   |   -    | 减法 |      |
+|  3   |   *    | 乘法 |      |
+|  4   |   /    | 除法 |      |
+|  5   |   %    | 求模 |      |
+
+- 比较运算符
+
+| 序号 |   表达式    |       意义       |
+| :--: | :---------: | :--------------: |
+|  1   |      >      |       大于       |
+|  2   |     >=      |     大于等于     |
+|  3,  |     <=      |       小于       |
+|  4   |     <=      |     小于等于     |
+|  5   |      =      |       等于       |
+|  6   |     !=      |      不等于      |
+|  7   |     IN      |       包含       |
+|  8   |  IS　NULL   |       为空       |
+|  9   | IS NOT NULL |      不为空      |
+|  10  | BETWEEN AND | 范围（包含左右） |
+|  11  |    LIKE     |     模糊查询     |
+|  12  |   REGEXP    |    正则表达式    |
+
+- 逻辑运算符
+
+| 序号 | 表达式 |   意义   |
+| :--: | :----: | :------: |
+|      |  AND   |  与关系  |
+|  2   |   OR   |  或关系  |
+|  3   |  NOT   |  非关系  |
+|  4   |  XOR   | 异或关系 |
+
+##### 二进制按位运算
+
+- 二进制位运算的实质是指将参与运算的两个操作数，按对应的二进制数逐位进行逻辑运算
+
+- 按位运算符
+
+| 序号 | 表达式 |   意义   |
+| :--: | :----: | :------: |
+|  1   |   &    | 位与关系 |
+|  2   |   \|   | 位或关系 |
+|  3   |   ~    |  位取反  |
+|  4   |   ^    |  位异或  |
+|  5   |   <<   |   左移   |
+|  6   |   >>   |   右移   |
+
+
+
+### WHERE子句的注意事项
+
+- WHERE子句中，条件执行的顺序是从左到右的。所以我们应该把索引条件，或者筛选掉记录最多的条件写在最左侧。
+
+```mysql
+SELECT empno,ename FROM t_tmp
+WHERE ename = "FORD" AND sal>=2000;
+
+SELECT empno,ename FROM t_tmp
+WHERE deptno = 10 and sal >= 2000;
+```
+
+#### 各种子句的执行顺序
+
+- 条件查询中，WHERE子句应该是第几个执行的额？
+
+```
+FROM -> WHER -> SELECT -> ORDER BY ->LIMIT 
+```
+
+
+
+## 数据库的高级查询
+
+- 数据统计分析
+  - 聚合函数、分组查询、HAVING子句
+
+- 多表连接查询
+  - 内连接，外连接、以及多表查询的多种语法
+- 子查询
+  - 单行子查询、多行子查询、WHERE子查询、FROM子查询、SELECT子查询
+
+#### 数据操作语言：聚合函数(永远不能出现在WHERE子句中)
+
+- 聚合函数在数据的查询分析中，应用十分广泛。聚合函数可以对数据求和、求最大值和最小值、求平均值等等。
+
+- SUM函数用于求和，只能用于数字类型，字符类型的统计结果为0，日期类型统计结果是毫秒数相加
+
+```mysql
+SELECT SUM(ename) FROM t_tmp;
+
+SELECT SUM(sal) FROM t_tmp
+WHERE deptno IN (10,20);
+```
+
+- MAX函数用于获得非空值的最大值
+
+```
+# 基本语法
+SELECT MAX(comm) FROM t_emp;
+# 问题1：查询10和20部门中，月收入最高的员工？
+SELECT MAX(sal + IFNULL(comm,0)) FROM t_tmp WHERE deptno IN(10,20);
+# 问题2：查询员工名字最长的是几个字符？
+SELECT MAX(LENGTH(ename)) FROM t_tmp;
+```
+
+- MIN函数用于获得非空值的最大值
+
+```
+# 基本语法
+SELECT MIN(comm) FROM t_emp;
+# 问题1：查询10和20部门中，月收入最低的员工？
+SELECT MIN(sal + IFNULL(comm,0)) FROM t_tmp WHERE deptno IN(10,20);
+# 问题2：查询员工名字最短的是几个字符？
+SELECT MIN(LENGTH(ename)) FROM t_tmp;
+```
+
+- AVG函数用于获取非空值的平均值，非数字数据统计结果为0
+- COUNT函数：COUNT(*)用于获得包含空值的记录数，COUNT(列名)用于获得包含非空值的记录数
+
+```mysql
+# COUNT(*)
+SELECT COUNT(*) FORM t_emp;
+
+# COUNT(字段名)
+SELECT COUNT(comm) FROM t-emp;
+
+# 查询10和20部门中，底薪超过2000元并且工龄超过15年的员工人数
+SELECT COUNT(*) FROM t_tmp WHERE deptno in(10,20) and (sal+ifnull(comm,0))>=2000 and (now()-hiredate)>15;
+
+# 查询1985年以后入职的员工，底薪超过公司平均底薪的员工数量？
+SELECT 
+	COUNT(*) 
+FROM 
+	t_emp 
+WHERE
+	hiredate>="1995-01-01"
+AND
+	sal >= SELECT AVG(sal+ifnull(comm,0)) FROM t_emp;
+```
+
+
+
+#### 数据操作语言：分组查询
+
+- 为什么要分组？
+
+  - 默认情况下汇总函数是对全表范围内的数据做统计
+  - GROUP BY子句的作用是通过一定的规则将一个数据集划分成若干个小的区域，然后针对每个小区域分别进行数据汇总处理
+
+  ```mysql
+  # ROUND()将小数四舍五入成整数
+  SELECT deptno,ROUND(AVG(sal)) FROM t_emp GROUP BY deptno;
+  ```
+
+- 逐级分组
+
+  - 数据库支持多列分组条件，执行的时候逐级分组
+
+  ```mysql
+  # 查询每个部门里，每种职位的人员数量和平均底薪
+  SELECT deptno,job,COUNT(*),AVG(sal) FROM t_emp GROUP BY deptno,job,ORDER BY deptno;
+  ```
+
+  
